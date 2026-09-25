@@ -174,6 +174,54 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 24),
+
+          // Account & Session Section
+          const Text('ACCOUNT & SESSION', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.logout_rounded, color: AppColors.error),
+              title: const Text(
+                'Sign Out of Account',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.error),
+              ),
+              subtitle: const Text('Safely log out and return to the login screen', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.error),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Sign Out'),
+                    content: const Text(
+                      'Are you sure you want to sign out? Your tasks and streak are saved safely.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true && context.mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  await ref.read(authProvider.notifier).signOut();
+                }
+              },
+            ),
+          ),
           const SizedBox(height: 32),
 
           // App Info Footer

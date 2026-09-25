@@ -1,31 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../ai_coach/presentation/ai_coach_screen.dart';
 import '../../analytics/presentation/analytics_screen.dart';
+import '../../auth/presentation/profile_screen.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../gamification/presentation/gamification_screen.dart';
+import '../../gamification/providers/gamification_provider.dart';
 import '../../heatmap/presentation/heatmap_screen.dart';
 import '../../reflection/presentation/daily_reflection_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../tasks/presentation/task_list_screen.dart';
 import 'dashboard_screen.dart';
 
-class MainScaffold extends StatefulWidget {
+class MainScaffold extends ConsumerStatefulWidget {
   const MainScaffold({super.key});
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  ConsumerState<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class _MainScaffoldState extends ConsumerState<MainScaffold> {
   int _currentIndex = 0;
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
   }
 
+  void _showSignOutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out? Your tasks and streaks are saved.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.pop(ctx); // Close dialog
+              Navigator.pop(context); // Close drawer
+              ref.read(authProvider.notifier).signOut();
+            },
+            child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    final gamification = ref.watch(gamificationProvider);
+
+    final displayName = user?.displayName ?? user?.email.split('@').first ?? 'Disciplined Warrior';
+    final email = user?.email ?? 'offline_user@discipline.local';
+    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'W';
 
     final screens = [
       DashboardScreen(
@@ -49,29 +86,80 @@ class _MainScaffoldState extends State<MainScaffold> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
+            DrawerHeader(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppColors.primaryDark, AppColors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(Icons.track_changes_rounded, color: Colors.white, size: 36),
-                  SizedBox(height: 10),
-                  Text(
-                    'Discipline Tracker',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'Consistency Over Intensity',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
+              child: InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white24,
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                email,
+                                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: Colors.white70),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white12,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Lvl ${gamification.level.level} • ${gamification.level.title}',
+                        style: const TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             ListTile(
@@ -103,7 +191,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
             ListTile(
               leading: const Icon(Icons.psychology_rounded),
-              title: const Text('AI Coach Insights'),
+              title: const Text('AI Coach Insights & Chat'),
               selected: _currentIndex == 3,
               onTap: () {
                 Navigator.pop(context);
@@ -120,6 +208,15 @@ class _MainScaffoldState extends State<MainScaffold> {
               },
             ),
             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.person_rounded, color: AppColors.primary),
+              title: const Text('Warrior Profile'),
+              subtitle: const Text('Account info & discipline records', style: TextStyle(fontSize: 11)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.workspace_premium_rounded, color: AppColors.accent),
               title: const Text('Achievements & Badges'),
@@ -144,6 +241,16 @@ class _MainScaffoldState extends State<MainScaffold> {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
               },
             ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout_rounded, color: AppColors.error),
+              title: const Text(
+                'Sign Out',
+                style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+              ),
+              onTap: () => _showSignOutDialog(context),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

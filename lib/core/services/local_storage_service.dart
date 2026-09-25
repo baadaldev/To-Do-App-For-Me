@@ -61,15 +61,27 @@ class LocalStorageService {
   }
 
   // --- Tasks Cache ---
+  bool hasSeededTasks(String userId) {
+    return (_settingsBox?.get('seeded_$userId', defaultValue: false) ??
+        _memorySettings['seeded_$userId'] ??
+        false) as bool;
+  }
+
+  void _markSeeded(String userId) {
+    _memorySettings['seeded_$userId'] = true;
+    _settingsBox?.put('seeded_$userId', true);
+  }
+
   List<TaskModel> getCachedTasks(String userId) {
     final rawList = (_tasksBox?.get(userId, defaultValue: <dynamic>[]) ??
         _memoryTasks[userId] ??
         <dynamic>[]) as List<dynamic>;
 
-    // If empty, auto-seed starter habits so the user immediately gets a rich dashboard
-    if (rawList.isEmpty) {
+    // If empty and never seeded, auto-seed starter habits so the user gets a rich initial dashboard
+    if (rawList.isEmpty && !hasSeededTasks(userId)) {
       final starterTasks = _generateStarterTasks(userId);
       saveTasksToCache(userId, starterTasks);
+      _markSeeded(userId);
       return starterTasks;
     }
 
@@ -150,18 +162,20 @@ class LocalStorageService {
   }
 
   Future<void> saveTasksToCache(String userId, List<TaskModel> tasks) async {
+    _markSeeded(userId);
     final serialized = tasks.map((t) => jsonEncode(t.toJson())).toList();
     _memoryTasks[userId] = serialized;
     await _tasksBox?.put(userId, serialized);
   }
 
   Future<void> saveSingleTaskToCache(TaskModel task) async {
+    _markSeeded(task.userId);
     final tasks = getCachedTasks(task.userId);
     final index = tasks.indexWhere((t) => t.id == task.id);
     if (index >= 0) {
       tasks[index] = task;
     } else {
-      tasks.add(task);
+      tasks.insert(0, task);
     }
     await saveTasksToCache(task.userId, tasks);
   }
@@ -170,6 +184,44 @@ class LocalStorageService {
     final tasks = getCachedTasks(userId);
     tasks.removeWhere((t) => t.id == taskId);
     await saveTasksToCache(userId, tasks);
+  }
+
+  Future<void> migrateGuestDataToUser(String targetUserId) async {
+    if (targetUserId == 'guest_user') return;
+    try {
+      final guestTasks = getCachedTasks('guest_user');
+      if (guestTasks.isNotEmpty) {
+        final existing = getCachedTasks(targetUserId);
+        final Map<String, TaskModel> map = {for (var t in existing) t.id: t};
+        for (final gt in guestTasks) {
+          if (!map.containsKey(gt.id)) {
+            map[gt.id] = gt.copyWith(userId: targetUserId);
+          }
+        }
+        await saveTasksToCache(targetUserId, map.values.toList());
+      }
+    } catch (_) {}
+  }
+
+  // --- AI Chat History ---
+  Future<void> saveAiChatHistory(String userId, List<Map<String, dynamic>> messages) async {
+    final key = 'ai_chat_$userId';
+    final serialized = messages.map((m) => jsonEncode(m)).toList();
+    _memorySettings[key] = serialized;
+    await _settingsBox?.put(key, serialized);
+  }
+
+  List<Map<String, dynamic>> getAiChatHistory(String userId) {
+    final key = 'ai_chat_$userId';
+    final rawList = (_settingsBox?.get(key, defaultValue: <dynamic>[]) ??
+        _memorySettings[key] ??
+        <dynamic>[]) as List<dynamic>;
+    return rawList.map((e) {
+      if (e is String) {
+        return Map<String, dynamic>.from(jsonDecode(e) as Map);
+      }
+      return Map<String, dynamic>.from(e as Map);
+    }).toList();
   }
 
   // --- Reflections Cache ---
@@ -203,53 +255,58 @@ class LocalStorageService {
     await _settingsBox?.put('dark_mode', value);
   }
 
+  bool getMorningReminderEnabled() {
+    return (_settingsBox?.get('morning_reminder', defaultValue: true) ??
+        _memorySettings['morning_reminder'] ??
+        true) as bool;
+  }
+
+  Future<void> setMorningReminderEnabled(bool value) async {
+    _memorySettings['morning_reminder'] = value;
+    await _settingsBox?.put('morning_reminder', value);
+  }
+
+  bool getEveningReminderEnabled() {
+    return (_settingsBox?.get('evening_reminder', defaultValue: true) ??
+        _memorySettings['evening_reminder'] ??
+        true) as bool;
+  }
+
+  Future<void> setEveningReminderEnabled(bool value) async {
+    _memorySettings['evening_reminder'] = value;
+    await _settingsBox?.put('evening_reminder', value);
+  }
+
+  bool getTaskDueReminderEnabled() {
+    return (_settingsBox?.get('task_due_reminder', defaultValue: true) ??
+        _memorySettings['task_due_reminder'] ??
+        true) as bool;
+  }
+
+  Future<void> setTaskDueReminderEnabled(bool value) async {
+    _memorySettings['task_due_reminder'] = value;
+    await _settingsBox?.put('task_due_reminder', value);
+  }
+
+  int getUserXp(String userId) {
+    return (_settingsBox?.get('xp_$userId', defaultValue: 0) ??
+        _memorySettings['xp_$userId'] ??
+        0) as int;
+  }
+
+  Future<void> setUserXp(String userId, int xp) async {
+    _memorySettings['xp_$userId'] = xp;
+    await _settingsBox?.put('xp_$userId', xp);
+  }
+
   int getStreakFreezes(String userId) {
-    return (_settingsBox?.get('streak_freezes_$userId', defaultValue: 2) ??
-        _memorySettings['streak_freezes_$userId'] ??
+    return (_settingsBox?.get('freezes_$userId', defaultValue: 2) ??
+        _memorySettings['freezes_$userId'] ??
         2) as int;
   }
 
   Future<void> setStreakFreezes(String userId, int count) async {
-    _memorySettings['streak_freezes_$userId'] = count;
-    await _settingsBox?.put('streak_freezes_$userId', count);
-  }
-
-  int getUserXp(String userId) {
-    return (_settingsBox?.get('user_xp_$userId', defaultValue: 120) ??
-        _memorySettings['user_xp_$userId'] ??
-        120) as int;
-  }
-
-  Future<void> setUserXp(String userId, int xp) async {
-    _memorySettings['user_xp_$userId'] = xp;
-    await _settingsBox?.put('user_xp_$userId', xp);
-  }
-
-  // Notification Preferences
-  bool getMorningReminderEnabled() =>
-      (_settingsBox?.get('morning_reminder', defaultValue: true) ??
-          _memorySettings['morning_reminder'] ??
-          true) as bool;
-  Future<void> setMorningReminderEnabled(bool val) async {
-    _memorySettings['morning_reminder'] = val;
-    await _settingsBox?.put('morning_reminder', val);
-  }
-
-  bool getEveningReminderEnabled() =>
-      (_settingsBox?.get('evening_reminder', defaultValue: true) ??
-          _memorySettings['evening_reminder'] ??
-          true) as bool;
-  Future<void> setEveningReminderEnabled(bool val) async {
-    _memorySettings['evening_reminder'] = val;
-    await _settingsBox?.put('evening_reminder', val);
-  }
-
-  bool getTaskDueReminderEnabled() =>
-      (_settingsBox?.get('task_due_reminder', defaultValue: true) ??
-          _memorySettings['task_due_reminder'] ??
-          true) as bool;
-  Future<void> setTaskDueReminderEnabled(bool val) async {
-    _memorySettings['task_due_reminder'] = val;
-    await _settingsBox?.put('task_due_reminder', val);
+    _memorySettings['freezes_$userId'] = count;
+    await _settingsBox?.put('freezes_$userId', count);
   }
 }

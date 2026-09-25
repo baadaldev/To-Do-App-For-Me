@@ -137,8 +137,32 @@ class ProfileScreen extends ConsumerWidget {
             text: 'Sign Out',
             icon: Icons.logout_rounded,
             variant: ButtonVariant.outlined,
-            onPressed: () {
-              ref.read(authProvider.notifier).signOut();
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Sign Out'),
+                  content: const Text(
+                    'Are you sure you want to sign out? Your tasks and discipline streak are saved safely.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true && context.mounted) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                await ref.read(authProvider.notifier).signOut();
+              }
             },
           ),
         ],

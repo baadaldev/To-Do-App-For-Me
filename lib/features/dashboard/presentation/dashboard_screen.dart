@@ -8,6 +8,7 @@ import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/empty_state_view.dart';
 import '../../../core/widgets/xp_progress_bar.dart';
 import '../../analytics/providers/analytics_provider.dart';
+import '../../auth/presentation/profile_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../gamification/providers/gamification_provider.dart';
 import '../../heatmap/presentation/widgets/day_details_sheet.dart';
@@ -87,7 +88,6 @@ class DashboardScreen extends ConsumerWidget {
         actions: [
           // Streak Flame Indicator in AppBar
           Container(
-            margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -116,6 +116,39 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // User Profile & Sign Out Entry
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+              child: Tooltip(
+                message: 'Warrior Profile & Sign Out',
+                child: CircleAvatar(
+                  radius: 17,
+                  backgroundColor: AppColors.primary,
+                  child: CircleAvatar(
+                    radius: 15,
+                    backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+                    child: Text(
+                      displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],

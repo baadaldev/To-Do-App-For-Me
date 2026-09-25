@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../features/tasks/models/task_model.dart';
 import '../../features/tasks/models/task_category.dart';
 import '../../features/tasks/models/task_priority.dart';
+import '../../features/ai_coach/models/ai_chat_message.dart';
 import '../constants/app_colors.dart';
 
 enum CoachInsightType { achievement, warning, suggestion, streak }
@@ -200,5 +202,155 @@ class AiCoachService {
     }
 
     return insights;
+  }
+
+  /// Interactive AI Chat Assistant engine responding dynamically to queries
+  static AiChatMessage respondToUserMessage({
+    required String query,
+    required List<TaskModel> allTasks,
+    required int currentStreak,
+    required int longestStreak,
+  }) {
+    final q = query.trim().toLowerCase();
+    final now = DateTime.now();
+
+    final todayTasks = allTasks.where((t) =>
+        t.dueDate.year == now.year &&
+        t.dueDate.month == now.month &&
+        t.dueDate.day == now.day).toList();
+    final completedToday = todayTasks.where((t) => t.isCompleted).length;
+    final pendingToday = todayTasks.length - completedToday;
+
+    // 1. Plan / Daily routine request
+    if (q.contains('plan') || q.contains('today') || q.contains('routine') || q.contains('schedule') || q.contains('non-negotiable')) {
+      final suggested = [
+        const AiSuggestedTask(
+          title: 'Deep Work: 90-Minute Uninterrupted Focus',
+          description: 'Single-tasking on your highest leverage project or code module',
+          category: TaskCategory.coding,
+          priority: TaskPriority.high,
+          dueHour: 10,
+          dueMinute: 0,
+        ),
+        const AiSuggestedTask(
+          title: 'Physical Conditioning (Workout / Run / Gym)',
+          description: 'Cardio, resistance training, and mobility',
+          category: TaskCategory.gym,
+          priority: TaskPriority.medium,
+          dueHour: 17,
+          dueMinute: 30,
+        ),
+        const AiSuggestedTask(
+          title: 'Evening Review & 20 Pages Reading',
+          description: 'Atomic Habits or engineering architecture documentation',
+          category: TaskCategory.reading,
+          priority: TaskPriority.medium,
+          dueHour: 21,
+          dueMinute: 0,
+        ),
+      ];
+
+      return AiChatMessage(
+        id: const Uuid().v4(),
+        isUser: false,
+        text: 'Here is your **Tactical Discipline Protocol** for today:\n\n'
+            '1. **Morning Non-Negotiable**: 90-min deep work block before digital distractions enter your mental bandwidth.\n'
+            '2. **Physical Fortitude**: 45-min workout to prime dopamine receptor sensitivity.\n'
+            '3. **Evening Review**: 20-min reading & calendar audit to guarantee tomorrow starts with zero friction.\n\n'
+            'You currently have **$pendingToday pending tasks** and **$completedToday completed** today. Tap below to automatically inject these high-impact tasks into your planner:',
+        timestamp: DateTime.now(),
+        suggestedTasks: suggested,
+        categoryTag: 'Daily Plan',
+      );
+    }
+
+    // 2. Procrastination / Motivation problem
+    if (q.contains('procrastinat') || q.contains('lazy') || q.contains('can\'t focus') || q.contains('distract') || q.contains('stuck')) {
+      final suggested = [
+        const AiSuggestedTask(
+          title: '5-Minute Micro-Start (Friction Breaker)',
+          description: 'Open the code editor or document and work for strictly 300 seconds',
+          category: TaskCategory.study,
+          priority: TaskPriority.high,
+          dueHour: 14,
+          dueMinute: 0,
+        ),
+      ];
+
+      return AiChatMessage(
+        id: const Uuid().v4(),
+        isUser: false,
+        text: 'Procrastination is **not laziness**; it is an emotional regulation hurdle caused by task ambiguity.\n\n'
+            'Here is the neuro-discipline solution:\n'
+            '• **The 5-Minute Rule**: Motivation does not precede action; action produces dopamine, which fuels motivation.\n'
+            '• **Micro-Commitment**: Tell yourself you only have to work for strictly 5 minutes. If you want to stop at minute 6, you can.\n'
+            '• **Remove Friction**: Put your phone in another room and close all browser tabs except one.\n\n'
+            'Shall we lock in a 5-minute friction-breaker task right now?',
+        timestamp: DateTime.now(),
+        suggestedTasks: suggested,
+        categoryTag: 'Focus Protocol',
+      );
+    }
+
+    // 3. Streak / Consistency query
+    if (q.contains('streak') || q.contains('consistency') || q.contains('heat map') || q.contains('momentum')) {
+      return AiChatMessage(
+        id: const Uuid().v4(),
+        isUser: false,
+        text: 'Your current streak is **$currentStreak days** (all-time longest: **$longestStreak days**).\n\n'
+            'Key Streak Rule: **Never miss twice.**\n'
+            'Missing one day is an accident; missing two is the birth of a new, negative habit. Even if you have an exhausting day, check off at least one light task (like 10 pages of reading or a 10-minute stretch) to keep the streak chain alive.',
+        timestamp: DateTime.now(),
+        categoryTag: 'Streak Discipline',
+      );
+    }
+
+    // 4. Coding / Technical mastery
+    if (q.contains('code') || q.contains('developer') || q.contains('flutter') || q.contains('leetcode') || q.contains('project')) {
+      final suggested = [
+        const AiSuggestedTask(
+          title: 'Solve 2 DSA Medium Algorithmic Challenges',
+          description: 'Focus on pattern recognition (Sliding Window / Two Pointers / Trees)',
+          category: TaskCategory.coding,
+          priority: TaskPriority.high,
+          dueHour: 11,
+          dueMinute: 0,
+        ),
+        const AiSuggestedTask(
+          title: 'Feature Implementation & Git Commit',
+          description: 'Write clean, test-driven architecture and push to GitHub',
+          category: TaskCategory.coding,
+          priority: TaskPriority.medium,
+          dueHour: 16,
+          dueMinute: 0,
+        ),
+      ];
+
+      return AiChatMessage(
+        id: const Uuid().v4(),
+        isUser: false,
+        text: 'To reach senior engineering velocity, split your coding time **70% building production software** and **30% algorithmic mastery**.\n\n'
+            '• **Tactile Building**: Real engineers are judged by shipped software with tests, not tutorial completions.\n'
+            '• **Deliberate Practice**: Don\'t look at solutions for at least 20 minutes when stuck on LeetCode.\n\n'
+            'I have prepared two targeted engineering tasks for your planner below:',
+        timestamp: DateTime.now(),
+        suggestedTasks: suggested,
+        categoryTag: 'Engineering',
+      );
+    }
+
+    // Default intelligent coach response
+    return AiChatMessage(
+      id: const Uuid().v4(),
+      isUser: false,
+      text: 'Analyzing your discipline matrix: You have **${allTasks.length} total tasks** in your system and an active streak of **$currentStreak days**.\n\n'
+          'Remember: **Discipline is choosing between what you want now and what you want most.**\n\n'
+          'What specific area shall we sharpen today?\n'
+          '• Ask: *"Give me a discipline plan for today"*\n'
+          '• Ask: *"How do I stop procrastinating?"*\n'
+          '• Ask: *"Break down my coding goals"*',
+      timestamp: DateTime.now(),
+      categoryTag: 'Discipline Mentorship',
+    );
   }
 }

@@ -75,6 +75,12 @@ class TaskNotifier extends StateNotifier<TaskState> {
   TaskNotifier(this._repository, this._localStorage, this._ref)
       : super(const TaskState(isLoading: true)) {
     loadTasks();
+    // Auto-reload tasks when authentication state changes
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (previous?.user?.uid != next.user?.uid) {
+        loadTasks();
+      }
+    });
   }
 
   String get _currentUserId => _ref.read(authProvider).user?.uid ?? 'guest_user';
@@ -99,6 +105,14 @@ class TaskNotifier extends StateNotifier<TaskState> {
     final updatedList = [task, ...state.allTasks];
     state = state.copyWith(allTasks: updatedList);
     await _repository.addTask(task);
+  }
+
+  Future<void> addMultipleTasks(List<TaskModel> tasks) async {
+    final updatedList = [...tasks, ...state.allTasks];
+    state = state.copyWith(allTasks: updatedList);
+    for (final task in tasks) {
+      await _repository.addTask(task);
+    }
   }
 
   Future<void> updateTask(TaskModel task) async {

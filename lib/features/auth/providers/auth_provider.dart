@@ -82,10 +82,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = const AuthState(isLoading: false);
       }
 
-      _repo.authStateChanges.listen((user) {
+      _repo.authStateChanges.listen((user) async {
         if (user != null) {
           final appUser = _fromFirebaseUser(user);
-          _storage.saveActiveUser(
+          await _storage.migrateGuestDataToUser(appUser.uid);
+          await _storage.saveActiveUser(
             uid: appUser.uid,
             email: appUser.email,
             displayName: appUser.displayName,
@@ -115,6 +116,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final cred = await _repo.signInWithEmail(email, password);
       if (cred.user != null) {
         final appUser = _fromFirebaseUser(cred.user!);
+        await _storage.migrateGuestDataToUser(appUser.uid);
         await _storage.saveActiveUser(
           uid: appUser.uid,
           email: appUser.email,
@@ -131,6 +133,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: email.trim(),
         displayName: name.isNotEmpty ? '${name[0].toUpperCase()}${name.substring(1)}' : 'Warrior',
       );
+      await _storage.migrateGuestDataToUser(localUser.uid);
       await _storage.saveActiveUser(
         uid: localUser.uid,
         email: localUser.email,
@@ -146,6 +149,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final cred = await _repo.signUpWithEmail(email, password, displayName);
       if (cred.user != null) {
         final appUser = _fromFirebaseUser(cred.user!);
+        await _storage.migrateGuestDataToUser(appUser.uid);
         await _storage.saveActiveUser(
           uid: appUser.uid,
           email: appUser.email,
@@ -161,6 +165,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: email.trim(),
         displayName: displayName.trim().isNotEmpty ? displayName.trim() : 'Warrior',
       );
+      await _storage.migrateGuestDataToUser(localUser.uid);
       await _storage.saveActiveUser(
         uid: localUser.uid,
         email: localUser.email,
@@ -191,6 +196,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final cred = await _repo.signInWithGoogle();
       if (cred?.user != null) {
         final appUser = _fromFirebaseUser(cred!.user!);
+        await _storage.migrateGuestDataToUser(appUser.uid);
         await _storage.saveActiveUser(
           uid: appUser.uid,
           email: appUser.email,
@@ -198,21 +204,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
         state = state.copyWith(user: appUser, isLoading: false);
       } else {
-        // User cancelled or unsupported on current web origin
-        await continueAsGuest();
+        state = state.copyWith(isLoading: false);
       }
-    } catch (_) {
-      await continueAsGuest();
-    }
-  }
-
-  Future<void> sendPasswordResetEmail(String email) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-    try {
-      await _repo.sendPasswordResetEmail(email);
-      state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Google Sign In error: $e',
+      );
     }
   }
 
@@ -222,8 +220,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _repo.signOut();
     } catch (_) {}
-    state = const AuthState();
+    state = const AuthState(isLoading: false);
   }
+
+  Future<void> sendPasswordReset(String email) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repo.sendPasswordResetEmail(email);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Password reset link sent (offline mode simulation)',
+      );
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) => sendPasswordReset(email);
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

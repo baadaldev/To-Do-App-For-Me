@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/date_time_utils.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/custom_text_field.dart';
 import '../models/task_category.dart';
@@ -46,7 +47,8 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
     _descController = TextEditingController(text: task?.description ?? '');
     _selectedCategory = task?.category ?? TaskCategory.coding;
     _selectedPriority = task?.priority ?? TaskPriority.medium;
-    _selectedDate = task?.dueDate ?? widget.initialDate ?? DateTime.now();
+    final initial = task?.dueDate ?? widget.initialDate ?? DateTime.now();
+    _selectedDate = DateTimeUtils.startOfDay(initial);
     _selectedTime = task != null
         ? TimeOfDay(hour: task.dueHour, minute: task.dueMinute)
         : const TimeOfDay(hour: 20, minute: 0);
@@ -68,7 +70,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) {
-      setState(() => _selectedDate = picked);
+      setState(() => _selectedDate = DateTimeUtils.startOfDay(picked));
     }
   }
 
@@ -80,6 +82,70 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
     if (picked != null) {
       setState(() => _selectedTime = picked);
     }
+  }
+
+  void _aiRefineGoal() {
+    final current = _titleController.text.trim();
+    if (current.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Type a quick keyword (e.g. "code", "gym", "read") to refine with AI.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final lower = current.toLowerCase();
+    if (lower.contains('code') || lower.contains('dev') || lower.contains('program') || lower.contains('flutter') || lower.contains('dsa')) {
+      setState(() {
+        _titleController.text = 'Deep Code: Build Feature & Clean Tests';
+        _descController.text = 'Uninterrupted focus sprint. Zero tab switching, modular architecture.';
+        _selectedCategory = TaskCategory.coding;
+        _selectedPriority = TaskPriority.high;
+      });
+    } else if (lower.contains('read') || lower.contains('book') || lower.contains('study') || lower.contains('exam')) {
+      setState(() {
+        _titleController.text = 'Read 25 Pages & Summarize Top 3 Lessons';
+        _descController.text = 'Active recall session. Take concise notes without phone distractions.';
+        _selectedCategory = TaskCategory.reading;
+        _selectedPriority = TaskPriority.medium;
+      });
+    } else if (lower.contains('gym') || lower.contains('workout') || lower.contains('run') || lower.contains('walk')) {
+      setState(() {
+        _titleController.text = '45-Min High-Discipline Physical Workout';
+        _descController.text = 'Proper hydration, full range of motion, complete all scheduled sets.';
+        _selectedCategory = TaskCategory.gym;
+        _selectedPriority = TaskPriority.high;
+      });
+    } else if (lower.contains('meditat') || lower.contains('mind') || lower.contains('breath') || lower.contains('journal')) {
+      setState(() {
+        _titleController.text = '15-Min Breathwork & Clarity Meditation';
+        _descController.text = 'Box breathing (4-4-4-4) to lower stress and sharpen tactical focus.';
+        _selectedCategory = TaskCategory.personal;
+        _selectedPriority = TaskPriority.medium;
+      });
+    } else {
+      setState(() {
+        _titleController.text = 'Deep Focus: $current (Sprint)';
+        _descController.text = 'Non-negotiable execution block. Complete core requirements with high urgency.';
+        _selectedPriority = TaskPriority.high;
+      });
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.auto_awesome_rounded, color: AppColors.accent),
+            SizedBox(width: 8),
+            Text('AI refined goal into an actionable discipline target!'),
+          ],
+        ),
+        backgroundColor: AppColors.primaryDark,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _saveTask() async {
@@ -100,7 +166,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
         title: _titleController.text.trim(),
         description: _descController.text.trim(),
         category: _selectedCategory,
-        dueDate: _selectedDate,
+        dueDate: DateTimeUtils.startOfDay(_selectedDate),
         dueHour: _selectedTime.hour,
         dueMinute: _selectedTime.minute,
         priority: _selectedPriority,
@@ -152,19 +218,71 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              // Title Field
-              CustomTextField(
-                controller: _titleController,
-                label: 'Task Title',
-                hint: 'e.g. Complete LeetCode 3 problems',
-                prefixIcon: Icons.task_alt_rounded,
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter a task title';
-                  }
-                  return null;
-                },
+              // Title Field with AI Refine action
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: CustomTextField(
+                      controller: _titleController,
+                      label: 'Task Title',
+                      hint: 'e.g. Complete LeetCode 3 problems',
+                      prefixIcon: Icons.task_alt_rounded,
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Please enter a task title';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: _aiRefineGoal,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                      ),
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_awesome_rounded, color: AppColors.accent, size: 20),
+                          SizedBox(height: 2),
+                          Text(
+                            'AI Refine',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (!isEditing) ...[
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildTemplateChip('Deep Work Sprint', 'High focus dev block', TaskCategory.coding, TaskPriority.high),
+                      const SizedBox(width: 8),
+                      _buildTemplateChip('Gym & Lifting', 'Push past comfort zone', TaskCategory.gym, TaskPriority.high),
+                      const SizedBox(width: 8),
+                      _buildTemplateChip('Read 25 Pages', 'Active book notes', TaskCategory.reading, TaskPriority.medium),
+                      const SizedBox(width: 8),
+                      _buildTemplateChip('15m Reflection', 'Mental reset & clarity', TaskCategory.personal, TaskPriority.low),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 18),
 
               // Description Field
@@ -366,6 +484,26 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTemplateChip(
+    String title,
+    String desc,
+    TaskCategory category,
+    TaskPriority priority,
+  ) {
+    return ActionChip(
+      avatar: const Icon(Icons.bolt_rounded, size: 14, color: AppColors.accent),
+      label: Text(title, style: const TextStyle(fontSize: 11)),
+      onPressed: () {
+        setState(() {
+          _titleController.text = title;
+          _descController.text = desc;
+          _selectedCategory = category;
+          _selectedPriority = priority;
+        });
+      },
     );
   }
 }
