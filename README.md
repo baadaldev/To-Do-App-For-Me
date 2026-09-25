@@ -1,364 +1,199 @@
-# Discipline Tracker — Production Mobile Application
+<div align="center">
 
-A production-ready mobile application built with **Flutter**, **Firebase**, **Hive**, and **Riverpod** following **Clean Architecture**. Designed to help users forge unwavering discipline, build daily habits, defend streaks, and visualize their consistency via a GitHub-inspired contribution heatmap.
+  <h1>⚡ Discipline Tracker</h1>
+  <p><strong>Forge Unwavering Consistency, Defend Your Streaks & Master Your Productivity</strong></p>
 
----
+  <p>
+    An offline-first, production-grade productivity mobile application built with <strong>Flutter</strong>, <strong>Riverpod 2.x</strong>, <strong>Firebase</strong>, and <strong>Hive</strong> following Clean Architecture.
+  </p>
 
-## 📱 Features Overview
+  <!-- Badges -->
+  <p>
+    <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white&style=for-the-badge" alt="Flutter"></a>
+    <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white&style=for-the-badge" alt="Dart"></a>
+    <a href="https://riverpod.dev"><img src="https://img.shields.io/badge/State-Riverpod_2.x-blueviolet?style=for-the-badge" alt="Riverpod"></a>
+    <a href="https://firebase.google.com"><img src="https://img.shields.io/badge/Backend-Firebase-FFCA28?logo=firebase&logoColor=black&style=for-the-badge" alt="Firebase"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License: MIT"></a>
+    <a href="https://github.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome"></a>
+  </p>
 
-1. **Authentication Suite**
-   - Email & Password sign-up and login with input validation
-   - Google Sign-In integration
-   - Password reset flow with automated email links
-   - User Profile management with level, XP, badges, and stats
+  <h4>
+    <a href="#-key-features">Features</a> •
+    <a href="#-architecture--tech-stack">Architecture</a> •
+    <a href="#-quick-start">Quick Start</a> •
+    <a href="#-roadmap">Roadmap</a> •
+    <a href="#-contributing">Contributing</a>
+  </h4>
 
-2. **Daily Planner & Task Management**
-   - Add, edit, delete, and filter daily tasks
-   - 6 Core Categories with distinct color identities: `Study`, `Coding`, `Gym`, `Reading`, `Personal`, `Work`
-   - Priority levels: `Low (+15 XP)`, `Medium (+25 XP)`, `High (+40 XP)`
-   - Due date and time scheduling with customizable reminders
-   - Interactive date strip and multi-filter tabs (All, Pending, Completed, Missed)
-
-3. **Reminder & Notification Engine**
-   - Local notifications with `timezone` exact alarm scheduling
-   - **Daily Morning Briefing (8:00 AM)**: Motivational briefing & task lineup
-   - **Daily Evening Reflection (9:00 PM)**: Review tasks and record daily journal
-   - **Task Due Reminders**: Alerts right before or at task due time
-   - **Missed Task Alerts**: Flags tasks that are overdue to safeguard streaks
-
-4. **Task Completion & Metric Tracking**
-   - Instant optimistic completion toggling with vibration & snackbar feedback
-   - Exact `completedAt` timestamp logging
-   - Real-time Daily, Weekly, and Monthly completion percentages
-
-5. **GitHub-Style Heatmap**
-   - Interactive contribution-style grid with 5 color intensity levels (Level 0 through 4)
-   - Toggle between **Yearly View** (52-week horizontal scroll) and **Monthly View**
-   - Interactive tap on any block to open a bottom sheet with completed & missed task drilldowns
-   - 30-Day Consistency Index calculation
-
-6. **Streak System & Streak Shields**
-   - Current Streak and Longest Streak calculations
-   - **Streak Freeze Protection**: Tokens that automatically preserve streaks when unexpected life events occur
-   - Unbroken consistency multipliers
-
-7. **Analytics Dashboard**
-   - Circular Productivity Score Gauge (0–100 algorithm considering task execution rate, streaks, and high-priority compliance)
-   - Weekly Completion vs. Missed trend bar chart (using `fl_chart`)
-   - Category distribution progress bars
-   - Lifetime completed vs. missed KPI counters
-
-8. **Gamification & Rewards**
-   - Tiered XP system: Task priority XP + streak multiplier bonus (up to +50%)
-   - Level progression system (Novice → Apprentice → Consistent → Iron Will → Discipline Master)
-   - Badges:
-     - `First Task Completed` (First Step)
-     - `7 Day Streak` (Week Warrior)
-     - `30 Day Streak` (Habit Master)
-     - `100 Tasks Completed` (Centurion)
-     - `Discipline Master` (Grandmaster)
-
-9. **AI Behavioral Coach**
-   - Rule-based cognitive engine analyzing task execution patterns
-   - Generates contextual insights (e.g., *"You completed 90% of gym tasks this week"*, *"You missed coding tasks 3 times this week. Try scheduling coding earlier in the day when cognitive energy is highest"*)
-   - Identifies Golden Productivity Windows (Morning focus vs. Night Owl)
-
-10. **Daily Reflection Journal**
-    - Guided 3-question evening review:
-      1. *What did you accomplish today?*
-      2. *What went wrong or challenged you?*
-      3. *What will you do tomorrow to stay on track?*
-    - Daily discipline rating (1 to 5 stars)
-    - Awards **+50 XP** per completed reflection
-    - Historical reflection timeline archive
-
-11. **Settings & PDF Progress Exporter**
-    - Material 3 Dark Mode (terminal-style GitHub aesthetic) & Light Mode
-    - Notification preferences toggles
-    - Force Cloud Backup (syncs Hive local database with Cloud Firestore)
-    - **Export Progress to PDF**: Generates a PDF summary report with KPI cards, category breakdown tables, and recent accomplishments.
+</div>
 
 ---
 
-## 🏗️ Folder Structure (Clean Architecture)
+## 💡 Why Discipline Tracker?
 
-```
-discipline_tracker/
-├── android/
-│   └── app/src/main/AndroidManifest.xml     # Alarm, boot & notification permissions
-├── ios/
-│   └── Runner/Info.plist                    # iOS notification permissions
-├── firestore.rules                          # Cloud Firestore security rules
-├── pubspec.yaml                             # Dependencies & asset declarations
-├── analysis_options.yaml                    # Dart linter configurations
-└── lib/
-    ├── app.dart                             # MaterialApp, theme configuration & auth routing
-    ├── firebase_options.dart                # Firebase config template
-    ├── main.dart                            # App initialization (Hive, Notifications, Firebase, Riverpod)
-    │
-    ├── core/
-    │   ├── constants/
-    │   │   ├── app_colors.dart              # Color palettes, GitHub greens & priorities
-    │   │   ├── app_strings.dart             # Localized strings & motivational quotes
-    │   │   └── app_theme.dart               # Material 3 Dark & Light Theme definitions
-    │   ├── services/
-    │   │   ├── ai_coach_service.dart        # Behavioral intelligence & coaching rules
-    │   │   ├── local_storage_service.dart   # Hive offline cache & preferences
-    │   │   ├── notification_service.dart    # flutter_local_notifications & exact scheduling
-    │   │   └── pdf_export_service.dart      # PDF progress report generator & printing
-    │   ├── utils/
-    │   │   ├── date_time_utils.dart         # Date formatting & consecutive streak logic
-    │   │   └── gamification_engine.dart     # XP calculations, levels, and badge evaluators
-    │   └── widgets/
-    │       ├── badge_card.dart              # Achievement badge tile widget
-    │       ├── custom_button.dart           # Primary, secondary & outlined buttons with loaders
-    │       ├── custom_text_field.dart       # Form inputs with password visibility toggle
-    │       ├── empty_state_view.dart        # Friendly empty state illustrations
-    │       ├── error_state_view.dart        # Reusable error cards with retry callbacks
-    │       ├── loading_indicator.dart       # Modern loading spinner
-    │       └── xp_progress_bar.dart         # Level gauge & XP fraction bar
-    │
-    └── features/
-        ├── auth/
-        │   ├── data/
-        │   │   └── auth_repository.dart     # Firebase Auth & Google Sign-In implementation
-        │   ├── presentation/
-        │   │   ├── forgot_password_screen.dart
-        │   │   ├── login_screen.dart
-        │   │   ├── profile_screen.dart
-        │   │   └── signup_screen.dart
-        │   └── providers/
-        │       └── auth_provider.dart       # Auth state notifier & session management
-        │
-        ├── tasks/
-        │   ├── models/
-        │   │   ├── task_category.dart       # Category enum (Study, Coding, Gym, etc.)
-        │   │   ├── task_model.dart          # Core Task entity with JSON serialization
-        │   │   └── task_priority.dart       # Priority enum (Low, Medium, High)
-        │   ├── data/
-        │   │   └── task_repository.dart     # Offline-first Firestore & Hive sync
-        │   ├── presentation/
-        │   │   ├── add_edit_task_screen.dart# Task creator & editor dialog
-        │   │   ├── task_list_screen.dart    # Daily planner with date strip & filter tabs
-        │   │   └── widgets/
-        │   │       ├── category_chip.dart
-        │   │       └── task_tile.dart
-        │   └── providers/
-        │       └── task_provider.dart       # Riverpod state notifier for tasks & filters
-        │
-        ├── heatmap/
-        │   ├── models/
-        │   │   └── heat_map_entry.dart      # Daily intensity models (0 to 4)
-        │   ├── presentation/
-        │   │   ├── heatmap_screen.dart      # Yearly & monthly interactive views
-        │   │   └── widgets/
-        │   │       ├── day_details_sheet.dart # Tap-to-inspect daily task breakdown
-        │   │       └── github_heatmap_widget.dart # Custom contribution calendar
-        │   └── providers/
-        │       └── heatmap_provider.dart    # Aggregates tasks into heatmap matrix
-        │
-        ├── analytics/
-        │   ├── presentation/
-        │   │   ├── analytics_screen.dart
-        │   │   └── widgets/
-        │   │       ├── category_breakdown_card.dart
-        │   │       ├── completion_bar_chart.dart
-        │   │       └── productivity_score_card.dart
-        │   └── providers/
-        │       └── analytics_provider.dart  # Computes completion rates & productivity score
-        │
-        ├── gamification/
-        │   ├── models/
-        │   │   ├── badge_model.dart
-        │   │   └── user_level.dart
-        │   ├── presentation/
-        │   │   └── gamification_screen.dart # Badges gallery & streak shield inventory
-        │   └── providers/
-        │       └── gamification_provider.dart
-        │
-        ├── ai_coach/
-        │   ├── presentation/
-        │   │   ├── ai_coach_screen.dart     # AI Coach advice hub
-        │   │   └── widgets/
-        │   │       └── coach_insight_card.dart
-        │   └── providers/
-        │       └── ai_coach_provider.dart
-        │
-        ├── reflection/
-        │   ├── models/
-        │   │   └── reflection_model.dart    # Journal reflection entity
-        │   ├── data/
-        │   │   └── reflection_repository.dart
-        │   ├── presentation/
-        │   │   ├── daily_reflection_screen.dart
-        │   │   └── reflection_history_screen.dart
-        │   └── providers/
-        │       └── reflection_provider.dart
-        │
-        ├── dashboard/
-        │   └── presentation/
-        │       ├── dashboard_screen.dart    # Today overview, quote, streak flame, heatmap preview
-        │       └── main_scaffold.dart       # Persistent bottom navigation bar shell
-        │
-        └── settings/
-            ├── presentation/
-            │   └── settings_screen.dart     # Dark mode, reminders, PDF export, backup
-            └── providers/
-                └── settings_provider.dart
-```
+> *"Motivation gets you going, but discipline keeps you growing."*
+
+Most habit trackers feel like boring spreadsheets. **Discipline Tracker** transforms routine building into an engaging, visual, and intelligent experience:
+- 🟩 **Visual GitHub Heatmap:** See your consistency in real-time just like your GitHub commit activity.
+- 🤖 **AI Behavioral Coach:** Identifies your peak focus hours (morning focus vs. night owl) and warns you before missed habits break your momentum.
+- ⚡ **Offline-First & Lightning Fast:** Sub-millisecond local reads powered by Hive DB with automatic cloud backup to Firestore.
+- 🛡️ **Streak Freeze Protection:** Real life happens—safeguard your streak tokens so a single emergency doesn't reset your hard-earned progress.
 
 ---
 
-## 🗄️ Cloud Firestore Database Schema
+## 📱 App Highlights & UI Showcase
 
-The database follows a user-scoped subcollection design for isolation, offline caching, and high performance.
+| 🗓️ Task Planner & Heatmap | 🤖 AI Behavioral Coach | 📊 Analytics & Badges |
+| :---: | :---: | :---: |
+| *(Add your screenshot here)* | *(Add your screenshot here)* | *(Add your screenshot here)* |
 
-### 1. `users/{userId}`
-Top-level user profile document.
-```json
-{
-  "uid": "USER_UID_STRING",
-  "email": "warrior@discipline.local",
-  "displayName": "Alex Mercer",
-  "photoUrl": "https://...",
-  "totalXp": 1450,
-  "level": 7,
-  "streakFreezes": 2,
-  "currentStreak": 14,
-  "longestStreak": 21,
-  "createdAt": "2026-09-01T08:00:00.000Z",
-  "lastActiveAt": "2026-09-24T07:58:00.000Z"
-}
-```
-
-### 2. `users/{userId}/tasks/{taskId}`
-Subcollection containing user tasks.
-```json
-{
-  "id": "e6f4773c-7c01-4475-8854-5d9c02e1c9db",
-  "userId": "USER_UID_STRING",
-  "title": "Solve 3 Dynamic Programming problems",
-  "description": "LeetCode daily problem and 2 practice graph questions",
-  "category": "coding",
-  "dueDate": "2026-09-24T00:00:00.000Z",
-  "dueHour": 18,
-  "dueMinute": 30,
-  "priority": "high",
-  "isCompleted": true,
-  "completedAt": "2026-09-24T17:45:12.000Z",
-  "hasReminder": true,
-  "createdAt": "2026-09-24T07:00:00.000Z",
-  "updatedAt": "2026-09-24T17:45:12.000Z"
-}
-```
-**Index recommendation:**
-- Composite index on `userId` (ASC), `dueDate` (ASC) for fast timeline queries.
-
-### 3. `users/{userId}/reflections/{reflectionId}`
-Daily evening journal entries.
-```json
-{
-  "id": "93b1d74e-5a02-4ec4-9df2-9b2f281e57c1",
-  "userId": "USER_UID_STRING",
-  "date": "2026-09-24T21:00:00.000Z",
-  "accomplishments": "Completed 100% of high priority tasks and completed intense 45m workout",
-  "challenges": "Felt tired after lunch; needed coffee to refocus",
-  "tomorrowPlan": "Wake up at 6:30 AM, read 20 pages of Deep Work",
-  "rating": 5,
-  "createdAt": "2026-09-24T21:15:00.000Z"
-}
-```
+> 💡 **Tip:** Replace the placeholders above with screenshots or a 10-second demo GIF of your app!
 
 ---
 
-## 🔒 Security Rules (`firestore.rules`)
+## ✨ Key Features
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
+### 1. 🗓️ Daily Planner & Task Engine
+- **6 Core Productivity Domains:** `Coding`, `Study`, `Gym`, `Reading`, `Work`, and `Personal`.
+- **Priority Matrix:** Low (+15 XP), Medium (+25 XP), High (+40 XP) with distinct color accents.
+- **Instant Optimistic Toggles:** Haptic feedback, sound cues, and instantaneous offline persistence.
+- **Smart Date Strip:** One-tap navigation between daily schedules with real-time completion progress rings.
 
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
+### 2. 🟩 Interactive GitHub-Style Heatmap
+- **Consistency Matrix:** 5 color intensity tiers (Level 0 through 4) based on daily task completion percentages.
+- **Yearly & Monthly Views:** 52-week horizontal scroll view to visualize whole-year dedication.
+- **Drilldown Inspection:** Tap any cell to view tasks completed and missed on that specific date.
+- **30-Day Discipline Index:** Mathematically scores consistency over rolling 30-day windows.
 
-      match /tasks/{taskId} {
-        allow read, write: if isOwner(userId);
-      }
+### 3. 🤖 AI Behavioral Coach & Diagnostics
+- **Pattern Detection:** Evaluates drop-off categories (e.g. *"You missed coding tasks 3 times this week"*).
+- **Golden Focus Window:** Discovers when your cognitive energy is highest (Morning 8:00 AM – 11:30 AM vs. Evening Night Owl).
+- **Actionable Micro-Tips:** Practical psychological nudges to eliminate friction.
 
-      match /reflections/{reflectionId} {
-        allow read, write: if isOwner(userId);
-      }
-    }
-  }
-}
-```
+### 4. 🏆 Gamification & Progression
+- **XP Engine:** Earn XP based on task priority, daily reflection, and streak multipliers (up to +50% bonus).
+- **Tiered Level Ranks:** Novice → Apprentice → Consistent → Iron Will → Discipline Master.
+- **Milestone Badges:** Unlock badges for streaks (7-Day Week Warrior, 30-Day Habit Master, 100 Centurion).
 
----
-
-## 🚀 Firebase Setup Instructions
-
-### Step 1: Install Firebase CLI & FlutterFire
-```bash
-npm install -g firebase-tools
-firebase login
-dart pub global activate flutterfire_cli
-```
-
-### Step 2: Configure Firebase for the App
-Run inside `discipline_tracker/`:
-```bash
-flutterfire configure
-```
-Select your Firebase project and select platforms: `android`, `ios`, `web`. This automatically links your `google-services.json` and `GoogleService-Info.plist`.
-
-### Step 3: Enable Authentication Providers
-In Firebase Console > **Authentication** > **Sign-in method**:
-1. Enable **Email/Password**.
-2. Enable **Google**.
-   - Add your Android SHA-1 fingerprint:
-     ```bash
-     cd android && ./gradlew signingReport
-     ```
-   - Copy the SHA-1 to Firebase Project Settings > Android App.
-
-### Step 4: Enable Cloud Firestore
-In Firebase Console > **Firestore Database** > **Create database** > choose **Production Mode**. Then deploy the rules:
-```bash
-firebase deploy --only firestore:rules
-```
+### 5. 📖 Daily Reflection Journal & PDF Progress Report
+- **Evening 3-Question Guided Journal:** Celebrate wins, diagnose obstacles, and set tomorrow's non-negotiables.
+- **One-Tap PDF Export:** Generates clean, professional PDF progress reports ready for printing or sharing.
 
 ---
 
-## 📦 How to Build & Run
+## 🏗️ Architecture & Tech Stack
 
-```bash
-# 1. Navigate to the project
-cd discipline_tracker
+The project strictly follows **Clean Architecture** with a feature-first folder organization:
 
-# 2. Get dependencies
-flutter pub get
-
-# 3. Run on connected device or emulator
-flutter run
-
-# 4. Build Release APK
-flutter build apk --release
-
-# 5. Build iOS Release
-flutter build ipa --release
 ```
+lib/
+├── app.dart                    # App initialization, MaterialApp & theme routing
+├── main.dart                   # Service bootstrap (Hive, Firebase, Notifications)
+│
+├── core/                       # Shared modules across features
+│   ├── constants/              # AppColors, AppStrings, AppTheme
+│   ├── services/               # AI Coach, Notification, Hive Cache, PDF Export
+│   ├── utils/                  # DateTime utilities, Gamification XP engine
+│   └── widgets/                # Reusable UI components (Buttons, Inputs, Badges)
+│
+└── features/                   # Independent feature slices
+    ├── auth/                   # Firebase Auth, Google Sign-in & profile
+    ├── tasks/                  # Task CRUD, Priority matrix, Hive repos
+    ├── heatmap/                # GitHub-style activity grid & 30-day index
+    ├── ai_coach/               # Behavioral analytics & insight cards
+    ├── analytics/              # Productivity gauge & FL Chart trends
+    ├── gamification/           # Badges, XP levels & streak freeze
+    ├── reflection/             # Evening journal entries & star ratings
+    └── settings/               # Dark/Light theme, backup sync & PDF exporter
+```
+
+### 🧰 Dependencies & Tools
+- **Framework:** [Flutter](https://flutter.dev) (Dart 3.x)
+- **State Management:** [Riverpod 2.x](https://riverpod.dev)
+- **Local Storage:** [Hive](https://pub.dev/packages/hive) & [Hive Flutter](https://pub.dev/packages/hive_flutter)
+- **Cloud Backend:** [Firebase Core](https://firebase.google.com), [Cloud Firestore](https://firebase.google.com/docs/firestore), [Firebase Auth](https://firebase.google.com/docs/auth)
+- **Charts & Graphs:** [fl_chart](https://pub.dev/packages/fl_chart)
+- **Notifications:** [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications)
+- **Reporting:** [pdf](https://pub.dev/packages/pdf) & [printing](https://pub.dev/packages/printing)
 
 ---
 
-## 💡 Offline-First Architecture & Sync
+## 🚀 Quick Start
 
-1. Every write operation (`addTask`, `toggleComplete`, `saveReflection`) updates **Hive local storage first**. The UI reacts instantly with zero latency.
-2. In the background, changes are committed to Cloud Firestore.
-3. If the device is offline or network fails, the user continues uninterrupted. The local cache serves all queries, heatmap generation, streak evaluations, and AI coach analysis.
-4. When connectivity restores, manual sync or next app boot syncs local data with the cloud.
+Get the app running locally in less than 3 minutes:
+
+### Prerequisites
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (>= 3.10.0)
+- Git installed
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/baadaldev/To-Do-App-For-Me.git
+   cd To-Do-App-For-Me
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Run the application:**
+   ```bash
+   # Launch on Chrome / Web
+   flutter run -d chrome
+
+   # Launch on Android / iOS Simulator
+   flutter run
+   ```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Complete daily task planner with categories and priorities
+- [x] GitHub-style contribution heatmap with year & month views
+- [x] Rule-based AI behavioral coach engine
+- [x] Gamification, XP multiplier, and Streak Badges
+- [x] Daily Evening Reflection journal
+- [x] PDF summary export & printing
+- [ ] Direct Google Gemini AI Live Coach integration
+- [ ] Home screen interactive widgets (iOS & Android)
+- [ ] Habit sound effects & haptic feedback customization
+- [ ] Social Leaderboard & friend accountability circles
+
+---
+
+## 🤝 Contributing
+
+Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
+
+Check out our [Contributing Guidelines](CONTRIBUTING.md) to get started.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
+
+---
+
+<div align="center">
+
+  ### ⭐ Support the Project
+
+  If you find this project helpful or inspiring, please consider giving it a **Star**!  
+  It helps the project gain visibility and motivates ongoing improvements.
+
+  <a href="https://github.com/baadaldev/To-Do-App-For-Me">
+    <img src="https://img.shields.io/github/stars/baadaldev/To-Do-App-For-Me?style=social" alt="GitHub Stars">
+  </a>
+
+</div>
