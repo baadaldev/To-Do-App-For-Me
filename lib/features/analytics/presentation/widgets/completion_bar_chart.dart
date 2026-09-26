@@ -36,10 +36,14 @@ class CompletionBarChart extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Weekly Completion Trend',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              const Expanded(
+                child: Text(
+                  'Weekly Completion Trend',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Row(
                 children: [
                   _buildLegendIndicator('Completed', AppColors.primary),

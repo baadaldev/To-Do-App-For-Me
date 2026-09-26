@@ -261,7 +261,7 @@ class _AiCoachScreenState extends ConsumerState<AiCoachScreen> with SingleTicker
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16, right: 32),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -272,57 +272,55 @@ class _AiCoachScreenState extends ConsumerState<AiCoachScreen> with SingleTicker
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : Colors.white,
-                    borderRadius: BorderRadius.circular(18).copyWith(topLeft: Radius.zero),
-                    border: Border.all(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        msg.text,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.45,
-                          color: isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
-                        ),
-                      ),
-                      if (msg.suggestedTasks != null && msg.suggestedTasks!.isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        const Divider(height: 1),
-                        const SizedBox(height: 10),
-                        const Row(
-                          children: [
-                            Icon(Icons.add_task_rounded, size: 16, color: AppColors.primary),
-                            SizedBox(width: 6),
-                            Text(
-                              'AI Recommended Action Items:',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ...msg.suggestedTasks!.map((task) => _buildSuggestedTaskTile(context, task, isDark)),
-                      ],
-                    ],
-                  ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : Colors.white,
+                borderRadius: BorderRadius.circular(18).copyWith(topLeft: Radius.zero),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                 ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    msg.text,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.45,
+                      color: isDark ? Colors.white.withValues(alpha: 0.95) : Colors.black87,
+                    ),
+                  ),
+                  if (msg.suggestedTasks != null && msg.suggestedTasks!.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    const Divider(height: 1),
+                    const SizedBox(height: 10),
+                    const Row(
+                      children: [
+                        Icon(Icons.add_task_rounded, size: 16, color: AppColors.primary),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'AI Recommended Action Items:',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...msg.suggestedTasks!.map((task) => _buildSuggestedTaskTile(context, task, isDark)),
+                  ],
+                ],
+              ),
             ),
           ),
         ],
@@ -408,26 +406,34 @@ class _AiCoachScreenState extends ConsumerState<AiCoachScreen> with SingleTicker
             child: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 18),
           ),
           const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-              ),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                 ),
-                SizedBox(width: 10),
-                Text('AI Mentor is formulating advice...', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  ),
+                  SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      'AI Mentor is formulating advice...',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

@@ -39,6 +39,7 @@ class TaskListScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'planner_fab',
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_task_rounded),

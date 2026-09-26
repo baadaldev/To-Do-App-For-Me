@@ -14,7 +14,7 @@ abstract class ITaskRepository {
 }
 
 class TaskRepository implements ITaskRepository {
-  final FirebaseFirestore _firestore;
+  FirebaseFirestore? _firestore;
   final LocalStorageService _localStorage;
   final NotificationService _notificationService;
 
@@ -22,12 +22,26 @@ class TaskRepository implements ITaskRepository {
     FirebaseFirestore? firestore,
     required LocalStorageService localStorage,
     NotificationService? notificationService,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+  })  : _firestore = firestore,
         _localStorage = localStorage,
         _notificationService = notificationService ?? NotificationService.instance;
 
-  CollectionReference<Map<String, dynamic>> _userTasksRef(String userId) {
-    return _firestore.collection('users').doc(userId).collection('tasks');
+  FirebaseFirestore? get _firestoreInstance {
+    try {
+      _firestore ??= FirebaseFirestore.instance;
+      return _firestore;
+    } catch (e) {
+      debugPrint('FirebaseFirestore unavailable (operating in offline-first mode): $e');
+      return null;
+    }
+  }
+
+  CollectionReference<Map<String, dynamic>>? _userTasksRef(String userId) {
+    try {
+      return _firestoreInstance?.collection('users').doc(userId).collection('tasks');
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -35,9 +49,12 @@ class TaskRepository implements ITaskRepository {
     // 1. Always load local cache first for instant, guaranteed availability
     final localTasks = _localStorage.getCachedTasks(userId);
 
+    final ref = _userTasksRef(userId);
+    if (ref == null) return localTasks;
+
     // 2. Attempt remote Firestore sync with quick timeout
     try {
-      final snapshot = await _userTasksRef(userId)
+      final snapshot = await ref
           .orderBy('dueDate', descending: false)
           .get()
           .timeout(const Duration(seconds: 3));
@@ -47,7 +64,7 @@ class TaskRepository implements ITaskRepository {
       if (remoteTasks.isEmpty) {
         // If remote has no records yet, sync all local tasks up to Firestore in background
         for (final t in localTasks) {
-          _userTasksRef(userId).doc(t.id).set(t.toJson()).catchError((_) {});
+          ref.doc(t.id).set(t.toJson()).catchError((_) {});
         }
         return localTasks;
       }
@@ -72,7 +89,12 @@ class TaskRepository implements ITaskRepository {
 
   @override
   Stream<List<TaskModel>> streamTasks(String userId) {
-    return _userTasksRef(userId).snapshots().map((snapshot) {
+    final ref = _userTasksRef(userId);
+    if (ref == null) {
+      return Stream.value(_localStorage.getCachedTasks(userId));
+    }
+
+    return ref.snapshots().map((snapshot) {
       final remoteTasks = snapshot.docs.map((doc) => TaskModel.fromJson(doc.data())).toList();
       final localTasks = _localStorage.getCachedTasks(userId);
 
@@ -106,13 +128,13 @@ class TaskRepository implements ITaskRepository {
     }
 
     // 3. Background Sync to Cloud Firestore with strict timeout
-    try {
-      await _userTasksRef(task.userId)
-          .doc(task.id)
-          .set(task.toJson())
-          .timeout(const Duration(seconds: 3));
-    } catch (e) {
-      debugPrint('Firestore background addTask notice: $e');
+    final ref = _userTasksRef(task.userId);
+    if (ref != null) {
+      try {
+        await ref.doc(task.id).set(task.toJson()).timeout(const Duration(seconds: 3));
+      } catch (e) {
+        debugPrint('Firestore background addTask notice: $e');
+      }
     }
   }
 
@@ -131,13 +153,13 @@ class TaskRepository implements ITaskRepository {
     } catch (_) {}
 
     // 3. Background Firestore update with timeout
-    try {
-      await _userTasksRef(task.userId)
-          .doc(task.id)
-          .update(task.toJson())
-          .timeout(const Duration(seconds: 3));
-    } catch (e) {
-      debugPrint('Firestore background updateTask notice: $e');
+    final ref = _userTasksRef(task.userId);
+    if (ref != null) {
+      try {
+        await ref.doc(task.id).update(task.toJson()).timeout(const Duration(seconds: 3));
+      } catch (e) {
+        debugPrint('Firestore background updateTask notice: $e');
+      }
     }
   }
 
@@ -152,13 +174,13 @@ class TaskRepository implements ITaskRepository {
     } catch (_) {}
 
     // 3. Background Firestore deletion with timeout
-    try {
-      await _userTasksRef(userId)
-          .doc(taskId)
-          .delete()
-          .timeout(const Duration(seconds: 3));
-    } catch (e) {
-      debugPrint('Firestore background deleteTask notice: $e');
+    final ref = _userTasksRef(userId);
+    if (ref != null) {
+      try {
+        await ref.doc(taskId).delete().timeout(const Duration(seconds: 3));
+      } catch (e) {
+        debugPrint('Firestore background deleteTask notice: $e');
+      }
     }
   }
 

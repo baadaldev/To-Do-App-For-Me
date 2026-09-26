@@ -206,12 +206,16 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _viewMode == HeatmapViewMode.yearly
-                          ? '${now.year} Contribution Grid'
-                          : DateFormat('MMMM yyyy').format(_selectedMonth),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    Expanded(
+                      child: Text(
+                        _viewMode == HeatmapViewMode.yearly
+                            ? '${now.year} Contribution Grid'
+                            : DateFormat('MMMM yyyy').format(_selectedMonth),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     const Text(
                       'Tap any block for details',
                       style: TextStyle(fontSize: 11, color: Colors.grey),

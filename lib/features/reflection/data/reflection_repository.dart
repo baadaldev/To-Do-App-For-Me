@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/services/local_storage_service.dart';
 import '../models/reflection_model.dart';
 
@@ -8,23 +9,45 @@ abstract class IReflectionRepository {
 }
 
 class ReflectionRepository implements IReflectionRepository {
-  final FirebaseFirestore _firestore;
+  FirebaseFirestore? _firestore;
   final LocalStorageService _localStorage;
 
   ReflectionRepository({
     FirebaseFirestore? firestore,
     required LocalStorageService localStorage,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+  })  : _firestore = firestore,
         _localStorage = localStorage;
 
-  CollectionReference<Map<String, dynamic>> _reflectionsRef(String userId) {
-    return _firestore.collection('users').doc(userId).collection('reflections');
+  FirebaseFirestore? get _firestoreInstance {
+    try {
+      _firestore ??= FirebaseFirestore.instance;
+      return _firestore;
+    } catch (e) {
+      debugPrint('FirebaseFirestore unavailable in reflection repo: $e');
+      return null;
+    }
+  }
+
+  CollectionReference<Map<String, dynamic>>? _reflectionsRef(String userId) {
+    try {
+      return _firestoreInstance?.collection('users').doc(userId).collection('reflections');
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
   Future<List<ReflectionModel>> getReflections(String userId) async {
+    final ref = _reflectionsRef(userId);
+    if (ref == null) {
+      return _localStorage.getCachedReflections(userId);
+    }
+
     try {
-      final snapshot = await _reflectionsRef(userId).orderBy('date', descending: true).get();
+      final snapshot = await ref
+          .orderBy('date', descending: true)
+          .get()
+          .timeout(const Duration(seconds: 3));
       final list = snapshot.docs.map((doc) => ReflectionModel.fromJson(doc.data())).toList();
 
       await _localStorage.saveReflectionsToCache(userId, list);
@@ -46,9 +69,15 @@ class ReflectionRepository implements IReflectionRepository {
     }
     await _localStorage.saveReflectionsToCache(reflection.userId, currentList);
 
-    // 2. Sync to Firestore
-    try {
-      await _reflectionsRef(reflection.userId).doc(reflection.id).set(reflection.toJson());
-    } catch (_) {}
+    // 2. Sync to Firestore in background
+    final ref = _reflectionsRef(reflection.userId);
+    if (ref != null) {
+      try {
+        await ref
+            .doc(reflection.id)
+            .set(reflection.toJson())
+            .timeout(const Duration(seconds: 3));
+      } catch (_) {}
+    }
   }
 }

@@ -154,6 +154,7 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'dashboard_fab',
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         child: const Icon(Icons.add_rounded, size: 28),
@@ -288,9 +289,12 @@ class DashboardScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Today\'s Execution Focus (${todayTasks.length})',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    'Today\'s Focus (${todayTasks.length})',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TextButton(
                   onPressed: onNavigateToPlanner,

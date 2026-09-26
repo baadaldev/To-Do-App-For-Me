@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 abstract class IAuthRepository {
@@ -12,48 +13,97 @@ abstract class IAuthRepository {
 }
 
 class AuthRepository implements IAuthRepository {
-  final FirebaseAuth _firebaseAuth;
-  final GoogleSignIn _googleSignIn;
+  FirebaseAuth? _firebaseAuth;
+  GoogleSignIn? _googleSignIn;
   bool _googleSignInInitialized = false;
 
   AuthRepository({
     FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
-  })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+  })  : _firebaseAuth = firebaseAuth,
+        _googleSignIn = googleSignIn;
+
+  FirebaseAuth? get _auth {
+    try {
+      _firebaseAuth ??= FirebaseAuth.instance;
+      return _firebaseAuth;
+    } catch (e) {
+      debugPrint('FirebaseAuth unavailable (running offline-first): $e');
+      return null;
+    }
+  }
+
+  GoogleSignIn? get _google {
+    try {
+      _googleSignIn ??= GoogleSignIn.instance;
+      return _googleSignIn;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
-  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
+  Stream<User?> get authStateChanges {
+    try {
+      return _auth?.authStateChanges() ?? const Stream.empty();
+    } catch (_) {
+      return const Stream.empty();
+    }
+  }
 
   @override
-  User? get currentUser => _firebaseAuth.currentUser;
+  User? get currentUser {
+    try {
+      return _auth?.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<UserCredential> signInWithEmail(String email, String password) async {
-    return await _firebaseAuth.signInWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
-    );
+    final auth = _auth;
+    if (auth == null) {
+      throw UnsupportedError('FirebaseAuth not initialized');
+    }
+    return await auth
+        .signInWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        )
+        .timeout(const Duration(seconds: 4));
   }
 
   @override
   Future<UserCredential> signUpWithEmail(String email, String password, String displayName) async {
-    final credential = await _firebaseAuth.createUserWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
-    );
+    final auth = _auth;
+    if (auth == null) {
+      throw UnsupportedError('FirebaseAuth not initialized');
+    }
+    final credential = await auth
+        .createUserWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        )
+        .timeout(const Duration(seconds: 4));
     await credential.user?.updateDisplayName(displayName.trim());
     return credential;
   }
 
   @override
   Future<UserCredential?> signInWithGoogle() async {
+    final auth = _auth;
+    final google = _google;
+    if (auth == null || google == null) {
+      throw UnsupportedError('Google Auth not available in offline environment');
+    }
+
     if (!_googleSignInInitialized) {
-      await _googleSignIn.initialize();
+      await google.initialize();
       _googleSignInInitialized = true;
     }
 
-    final googleUser = await _googleSignIn.authenticate();
+    final googleUser = await google.authenticate();
     final accessToken = (await googleUser.authorizationClient.authorizeScopes([
       'email',
     ])).accessToken;
@@ -63,17 +113,26 @@ class AuthRepository implements IAuthRepository {
       idToken: googleAuth.idToken,
     );
 
-    return await _firebaseAuth.signInWithCredential(credential);
+    return await auth.signInWithCredential(credential).timeout(const Duration(seconds: 4));
   }
 
   @override
   Future<void> sendPasswordResetEmail(String email) async {
-    await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
+    final auth = _auth;
+    if (auth != null) {
+      try {
+        await auth.sendPasswordResetEmail(email: email.trim()).timeout(const Duration(seconds: 4));
+      } catch (_) {}
+    }
   }
 
   @override
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _firebaseAuth.signOut();
+    try {
+      await _google?.signOut();
+    } catch (_) {}
+    try {
+      await _auth?.signOut();
+    } catch (_) {}
   }
 }
