@@ -197,3 +197,6 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
   </a>
 
 </div>
+
+## 🚀 Getting Started
+Clone the repository and open `index.html` in your favorite web browser.
